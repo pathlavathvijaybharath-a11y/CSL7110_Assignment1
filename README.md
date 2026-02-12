@@ -1,39 +1,56 @@
 # CSL7110 - Assignment 1  
-**Apache Hadoop MapReduce**
+**MapReduce (Hadoop) + Apache Spark (PySpark) – Word Count**
 
 **Name:** Pathlavath Vijay Bharath  
 **Roll No:** M25CSA020  
-**Date:** Feb 2026
+**Date:** February 2026  
 
-GitHub: https://github.com/pathlavathvijaybharath-a11y/CSL7110_Assignment1
+GitHub Repository: https://github.com/pathlavathvijaybharath-a11y/CSL7110_Assignment1
 
-## What was done
+## Part 1 – Hadoop MapReduce
 
-1. Ran classic **WordCount** example (small file)  
-2. Analyzed **Map phase** → (offset, line) → (word, 1)  
-3. Analyzed **Reduce phase** → (word, [1,1,1,...]) → (word, count)  
-4–6. Wrote custom **WordCount.java**  
-   - Removes punctuation  
-   - Case insensitive  
-   - Uses StringTokenizer  
-   - Proper Writable types (LongWritable, Text, IntWritable)  
+### What was implemented
+- Classic WordCount example  
+- Map & Reduce phase analysis (using song lyrics example)  
+- Custom `WordCount.java`  
+  - Removes punctuation  
+  - Case-insensitive counting  
+  - Uses `StringTokenizer`  
+- Ran on Project Gutenberg file **200.txt** (~8 MB) → ~78,262 unique words  
+- Explained why **HDFS directories show `-`** (no replication factor – only files/blocks are replicated)  
+- Split size performance experiment on 8 MB file (single node)
 
-7. Ran WordCount on **Project Gutenberg 200.txt** (~8 MB)  
-   → ~78,262 unique words
+### Split Size Results (most important finding)
+| Split Size     | Number of Maps | Execution Time | Comment                        |
+|----------------|----------------|----------------|--------------------------------|
+| 1 MB           | 8              | 4.823 s        | Good parallelism               |
+| 2 MB           | 4              | 5.905 s        | Worst                          |
+| 4 MB           | 2              | 5.961 s        | Worst                          |
+| Default (~8 MB)| 1              | **4.899 s**    | **Fastest** – least overhead   |
 
-8. Explained why **directories in HDFS show -** (no replication)  
-   → Only files/block have replication factor (data)  
-   → Directories = pure metadata in NameNode
+**Conclusion (single node + small file):** Default/big splits win because task scheduling & startup overhead dominates.
 
-9. Split size performance test (8 MB file, single node)  
+## Part 2 – PySpark Word Count
 
-| Split Size | Maps | Time     | Comment               |
-|------------|------|----------|-----------------------|
-| 1 MB       | 8    | 4.82 s   | good parallelism      |
-| 2 MB       | 4    | 5.91 s   | worst                 |
-| 4 MB       | 2    | 5.96 s   | worst                 |
-| 8 MB (default) | 1 | **4.90 s** | **fastest** (least overhead) |
+### Files in PySpark folder
+- `wordcount.py`     → Main PySpark program  
+- `input.txt`        → Sample input text file used for testing  
+- `output.png`       → Screenshot of terminal output  
 
-**Key learning (single node, small file):**  
-→ Default/big splits usually win because task startup overhead is significant.
+### What the program does
+- Reads text from `input.txt`  
+- Splits lines into words  
+- Maps: each word → `(word, 1)`  
+- Reduces: group by word and sum counts  
+- Prints final word counts to console  
 
+### How to Run
+```bash
+# Navigate to the folder
+cd path/to/CSL7110_Assignment1/PySpark-Part    # or wherever your files are
+
+# Option 1: Run directly (if pyspark is in environment)
+python3 wordcount.py
+
+# Option 2: Recommended – use spark-submit
+spark-submit wordcount.py
